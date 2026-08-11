@@ -397,8 +397,8 @@ while True:
 
         cv2.putText(
             frame,
-            "MA DETECTADA",
-            (20, 40),
+            "HAND DETECTED",
+            (360, 40),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
             (0, 255, 0),
@@ -412,8 +412,8 @@ while True:
         
         cv2.putText(
             frame,
-            "Busca una ma...",
-            (20, 40),
+            "Searching for a hand...",
+            (320, 40),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
             (0, 0, 255),
