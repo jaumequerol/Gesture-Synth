@@ -5,13 +5,6 @@ import time
 import numpy as np
 import pygame
 
-
-
-
-# ============================================================
-# CONFIGURACIÓ
-# ============================================================
-
 MODEL_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "models",
@@ -22,7 +15,6 @@ BaseOptions = mp.tasks.BaseOptions
 VisionRunningMode = mp.tasks.vision.RunningMode
 HandLandmarker = mp.tasks.vision.HandLandmarker
 HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
-
 
 options = HandLandmarkerOptions(
     base_options=BaseOptions(
@@ -35,203 +27,133 @@ options = HandLandmarkerOptions(
     min_tracking_confidence=0.7
 )
 
-
-# Crear el detector
 detector = HandLandmarker.create_from_options(options)
 
+camera = cv2.VideoCapture(0)
 
-# ============================================================
-# CONNEXIÓ AMB LA CÀMERA
-# ============================================================
-
-camara = cv2.VideoCapture(0)
-
-print("----------------------------------------")
-print("GESTURE SYNTH")
-print("----------------------------------------")
-print("Càmera iniciada correctament.")
-print("Posa la mà davant de la càmera.")
-print("Prem Q per sortir.")
-print("----------------------------------------")
-
-
-# Timestamp inicial
 timestamp_ms = 0
 
-
-# ============================================================
-# CONNEXIONS DE LA MÀ
-# ============================================================
-estat_anterior = (None, 0)
+previous_state = (None, 0)
 pygame.mixer.init(44100, -16, 2, 1024)
 t = np.linspace(0, 1, 44100, False)
-canal_synth = pygame.mixer.Channel(0)
-canal_synth.set_volume(0.0)
+synth_channel = pygame.mixer.Channel(0)
+synth_channel.set_volume(0.0)
 
-def crear_acord(f1, f2, f3):
+def create_chord(f1, f2, f3):
     wave = (np.sin(2*np.pi*f1*t) + np.sin(2*np.pi*f2*t) + np.sin(2*np.pi*f3*t)) / 3
     audio = (wave * 8000).astype(np.int16)
     return pygame.sndarray.make_sound(np.column_stack((audio, audio)))
 
-
-
-# Guardem els acords generats en un diccionari
 f1, f2, f3 = 262, 330, 392
-MAJORS = {
-    1: crear_acord(f1, f2, f3),
-    2: crear_acord(f1*(2**(2/12)), f2*(2**(2/12)), f3*(2**(2/12))),
-    3: crear_acord(f1*(2**(4/12)), f2*(2**(4/12)), f3*(2**(4/12))),
-    4: crear_acord(f1*(2**(5/12)), f2*(2**(5/12)), f3*(2**(5/12))),
-    5: crear_acord(f1*(2**(7/12)), f2*(2**(7/12)), f3*(2**(7/12))),
-    6: crear_acord(f1*(2**(9/12)), f2*(2**(9/12)), f3*(2**(9/12))),
-    7: crear_acord(f1*(2**(11/12)), f2*(2**(11/12)), f3*(2**(11/12))),
-    8: crear_acord(f1/2, f2/2, f3/2),
-    9: crear_acord(f1/2*(2**(2/12)), f2/2*(2**(2/12)), f3/2*(2**(2/12))),
-    10: crear_acord(f1/2*(2**(4/12)), f2/2*(2**(4/12)), f3/2*(2**(4/12))),
-    11: crear_acord(f1/2*(2**(5/12)), f2/2*(2**(5/12)), f3/2*(2**(5/12))),
-    12: crear_acord(f1/2*(2**(7/12)), f2/2*(2**(7/12)), f3/2*(2**(7/12))),
-    13: crear_acord(f1/2*(2**(9/12)), f2/2*(2**(9/12)), f3/2*(2**(9/12))),
-    14: crear_acord(f1/2*(2**(11/12)), f2/2*(2**(11/12)), f3/2*(2**(11/12))),
-    15: crear_acord(f1*2, f2*2, f3*2),
-    16: crear_acord(f1*2*(2**(2/12)), f2*2*(2**(2/12)), f3*2*(2**(2/12))),
-    17: crear_acord(f1*2*(2**(4/12)), f2*2*(2**(4/12)), f3*2*(2**(4/12))),
-    18: crear_acord(f1*2*(2**(5/12)), f2*2*(2**(5/12)), f3*2*(2**(5/12))),
-    19: crear_acord(f1*2*(2**(7/12)), f2*2*(2**(7/12)), f3*2*(2**(7/12))),
-    20: crear_acord(f1*2*(2**(9/12)), f2*2*(2**(9/12)), f3*2*(2**(9/12))),
-    21: crear_acord(f1*2*(2**(11/12)), f2*2*(2**(11/12)), f3*2*(2**(11/12)))
-}
-f1, f2, f3 = 262, 312, 392
-MENORS = {
-    1: crear_acord(f1, f2, f3),
-       2: crear_acord(f1*(2**(2/12)), f2*(2**(2/12)), f3*(2**(2/12))),
-       3: crear_acord(f1*(2**(4/12)), f2*(2**(4/12)), f3*(2**(4/12))),
-       4: crear_acord(f1*(2**(5/12)), f2*(2**(5/12)), f3*(2**(5/12))),
-       5: crear_acord(f1*(2**(7/12)), f2*(2**(7/12)), f3*(2**(7/12))),
-       6: crear_acord(f1*(2**(9/12)), f2*(2**(9/12)), f3*(2**(9/12))),
-       7: crear_acord(f1*(2**(11/12)), f2*(2**(11/12)), f3*(2**(11/12))),
-       8: crear_acord(f1/2, f2/2, f3/2),
-       9: crear_acord(f1/2*(2**(2/12)), f2/2*(2**(2/12)), f3/2*(2**(2/12))),
-       10: crear_acord(f1/2*(2**(4/12)), f2/2*(2**(4/12)), f3/2*(2**(4/12))),
-       11: crear_acord(f1/2*(2**(5/12)), f2/2*(2**(5/12)), f3/2*(2**(5/12))),
-       12: crear_acord(f1/2*(2**(7/12)), f2/2*(2**(7/12)), f3/2*(2**(7/12))),
-       13: crear_acord(f1/2*(2**(9/12)), f2/2*(2**(9/12)), f3/2*(2**(9/12))),
-       14: crear_acord(f1/2*(2**(11/12)), f2/2*(2**(11/12)), f3/2*(2**(11/12))),
-       15: crear_acord(f1*2, f2*2, f3*2),
-       16: crear_acord(f1*2*(2**(2/12)), f2*2*(2**(2/12)), f3*2*(2**(2/12))),
-       17: crear_acord(f1*2*(2**(4/12)), f2*2*(2**(4/12)), f3*2*(2**(4/12))),
-       18: crear_acord(f1*2*(2**(5/12)), f2*2*(2**(5/12)), f3*2*(2**(5/12))),
-       19: crear_acord(f1*2*(2**(7/12)), f2*2*(2**(7/12)), f3*2*(2**(7/12))),
-       20: crear_acord(f1*2*(2**(9/12)), f2*2*(2**(9/12)), f3*2*(2**(9/12))),
-       21: crear_acord(f1*2*(2**(11/12)), f2*2*(2**(11/12)), f3*2*(2**(11/12)))
+MAJOR_CHORDS = {
+    1: create_chord(f1, f2, f3),
+    2: create_chord(f1*(2**(2/12)), f2*(2**(2/12)), f3*(2**(2/12))),
+    3: create_chord(f1*(2**(4/12)), f2*(2**(4/12)), f3*(2**(4/12))),
+    4: create_chord(f1*(2**(5/12)), f2*(2**(5/12)), f3*(2**(5/12))),
+    5: create_chord(f1*(2**(7/12)), f2*(2**(7/12)), f3*(2**(7/12))),
+    6: create_chord(f1*(2**(9/12)), f2*(2**(9/12)), f3*(2**(9/12))),
+    7: create_chord(f1*(2**(11/12)), f2*(2**(11/12)), f3*(2**(11/12))),
+    8: create_chord(f1/2, f2/2, f3/2),
+    9: create_chord(f1/2*(2**(2/12)), f2/2*(2**(2/12)), f3/2*(2**(2/12))),
+    10: create_chord(f1/2*(2**(4/12)), f2/2*(2**(4/12)), f3/2*(2**(4/12))),
+    11: create_chord(f1/2*(2**(5/12)), f2/2*(2**(5/12)), f3/2*(2**(5/12))),
+    12: create_chord(f1/2*(2**(7/12)), f2/2*(2**(7/12)), f3/2*(2**(7/12))),
+    13: create_chord(f1/2*(2**(9/12)), f2/2*(2**(9/12)), f3/2*(2**(9/12))),
+    14: create_chord(f1/2*(2**(11/12)), f2/2*(2**(11/12)), f3/2*(2**(11/12))),
+    15: create_chord(f1*2, f2*2, f3*2),
+    16: create_chord(f1*2*(2**(2/12)), f2*2*(2**(2/12)), f3*2*(2**(2/12))),
+    17: create_chord(f1*2*(2**(4/12)), f2*2*(2**(4/12)), f3*2*(2**(4/12))),
+    18: create_chord(f1*2*(2**(5/12)), f2*2*(2**(5/12)), f3*2*(2**(5/12))),
+    19: create_chord(f1*2*(2**(7/12)), f2*2*(2**(7/12)), f3*2*(2**(7/12))),
+    20: create_chord(f1*2*(2**(9/12)), f2*2*(2**(9/12)), f3*2*(2**(9/12))),
+    21: create_chord(f1*2*(2**(11/12)), f2*2*(2**(11/12)), f3*2*(2**(11/12)))
 }
 
-# Els 21 punts de la mà de MediaPipe
+f1, f2, f3 = 262, 312, 392
+MINOR_CHORDS = {
+    1: create_chord(f1, f2, f3),
+    2: create_chord(f1*(2**(2/12)), f2*(2**(2/12)), f3*(2**(2/12))),
+    3: create_chord(f1*(2**(4/12)), f2*(2**(4/12)), f3*(2**(4/12))),
+    4: create_chord(f1*(2**(5/12)), f2*(2**(5/12)), f3*(2**(5/12))),
+    5: create_chord(f1*(2**(7/12)), f2*(2**(7/12)), f3*(2**(7/12))),
+    6: create_chord(f1*(2**(9/12)), f2*(2**(9/12)), f3*(2**(9/12))),
+    7: create_chord(f1*(2**(11/12)), f2*(2**(11/12)), f3*(2**(11/12))),
+    8: create_chord(f1/2, f2/2, f3/2),
+    9: create_chord(f1/2*(2**(2/12)), f2/2*(2**(2/12)), f3/2*(2**(2/12))),
+    10: create_chord(f1/2*(2**(4/12)), f2/2*(2**(4/12)), f3/2*(2**(4/12))),
+    11: create_chord(f1/2*(2**(5/12)), f2/2*(2**(5/12)), f3/2*(2**(5/12))),
+    12: create_chord(f1/2*(2**(7/12)), f2/2*(2**(7/12)), f3/2*(2**(7/12))),
+    13: create_chord(f1/2*(2**(9/12)), f2/2*(2**(9/12)), f3/2*(2**(9/12))),
+    14: create_chord(f1/2*(2**(11/12)), f2/2*(2**(11/12)), f3/2*(2**(11/12))),
+    15: create_chord(f1*2, f2*2, f3*2),
+    16: create_chord(f1*2*(2**(2/12)), f2*2*(2**(2/12)), f3*2*(2**(2/12))),
+    17: create_chord(f1*2*(2**(4/12)), f2*2*(2**(4/12)), f3*2*(2**(4/12))),
+    18: create_chord(f1*2*(2**(5/12)), f2*2*(2**(5/12)), f3*2*(2**(5/12))),
+    19: create_chord(f1*2*(2**(7/12)), f2*2*(2**(7/12)), f3*2*(2**(7/12))),
+    20: create_chord(f1*2*(2**(9/12)), f2*2*(2**(9/12)), f3*2*(2**(9/12))),
+    21: create_chord(f1*2*(2**(11/12)), f2*2*(2**(11/12)), f3*2*(2**(11/12)))
+}
+
 CONNECTIONS = [
-    # Polze
     (0, 1),
     (1, 2),
     (2, 3),
     (3, 4),
-
-    # Índex
     (0, 5),
     (5, 6),
     (6, 7),
     (7, 8),
-
-    # Mig
     (5, 9),
     (9, 10),
     (10, 11),
     (11, 12),
-
-    # Anular
     (9, 13),
     (13, 14),
     (14, 15),
     (15, 16),
-
-    # Menovell
     (13, 17),
     (17, 18),
     (18, 19),
     (19, 20),
-
-    # Palma
     (0, 17)
 ]
 
-
-# ============================================================
-# BUCLE PRINCIPAL
-# ============================================================
-
 while True:
+    success, frame = camera.read()
 
-    # Llegir imatge de la càmera
-    correcte, frame = camara.read()
-
-    if not correcte:
-        print("ERROR: No es pot llegir la càmera.")
+    if not success:
         break
 
-
-    # Efecte mirall
     frame = cv2.flip(frame, 1)
 
-
-    # Dimensions de la imatge
     height, width, _ = frame.shape
 
-
-    # Convertir BGR -> RGB
     frame_rgb = cv2.cvtColor(
         frame,
         cv2.COLOR_BGR2RGB
     )
 
-
-    # Crear objecte MediaPipe Image
     mp_image = mp.Image(
         image_format=mp.ImageFormat.SRGB,
         data=frame_rgb
     )
 
-
-    # Timestamp en mil·lisegons
     timestamp_ms = int(time.time() * 1000)
 
-
-    # Detectar la mà
-    resultat = detector.detect_for_video(
+    result = detector.detect_for_video(
         mp_image,
         timestamp_ms
     )
 
+    if result.hand_landmarks:
+        for hand in result.hand_landmarks:
+            previous_degree = -1
+            for start, end in CONNECTIONS:
+                x1 = int(hand[start].x * width)
+                y1 = int(hand[start].y * height)
 
-    # ========================================================
-    # DIBUIXAR LA MÀ
-    # ========================================================
-
-    if resultat.hand_landmarks:
-
-        # Agafem la primera mà detectada
-       
-        for hand in resultat.hand_landmarks:
-
-
-
-        # ----------------------------------------------------
-        # DIBUIXAR LES LÍNIES
-        # ----------------------------------------------------
-            grau_anterior = -1
-            for inici, final in CONNECTIONS:
-
-                x1 = int(hand[inici].x * width)
-                y1 = int(hand[inici].y * height)
-
-                x2 = int(hand[final].x * width)
-                y2 = int(hand[final].y * height)
+                x2 = int(hand[end].x * width)
+                y2 = int(hand[end].y * height)
 
                 cv2.line(
                     frame,
@@ -241,22 +163,18 @@ while True:
                     2
                 )
 
+            degree = 0
 
-            # ----------------------------------------------------
-            # DIBUIXAR ELS 21 PUNTS
-            # ----------------------------------------------------
-            grau = 0
-
-            polze = True
-            if ((hand[4].x-hand[2].x)*(hand[2].x-hand[1].x)) < 0:
-                polze = False
-            if ((hand[4].x-hand[2].y)*(hand[2].x-hand[1].y)) < 0:
-                polze = False
-            if polze:
-                grau += 1
+            thumb = True
+            if ((hand[4].x - hand[2].x) * (hand[2].x - hand[1].x)) < 0:
+                thumb = False
+            if ((hand[4].x - hand[2].y) * (hand[2].x - hand[1].y)) < 0:
+                thumb = False
+            if thumb:
+                degree += 1
                 cv2.putText(
                     frame,
-                    "Polze",
+                    "Thumb",
                     (50, 40),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1,
@@ -268,16 +186,16 @@ while True:
             for i in range(5, 9):
                 landmark = hand[i]
                 if i == 5:
-                    y_anterior = int(landmark.y * height)
+                    previous_y = int(landmark.y * height)
                 else:
-                    if y_anterior < int(landmark.y * height):
+                    if previous_y < int(landmark.y * height):
                         index = False
-                y_anterior = int(landmark.y * height)
+                previous_y = int(landmark.y * height)
             if index:
-                grau += 1
+                degree += 1
                 cv2.putText(
                     frame,
-                    "Índex",
+                    "Index",
                     (50, 70),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1,
@@ -285,20 +203,20 @@ while True:
                     2
                 )
             
-            mig = True
+            middle = True
             for i in range(9, 13):
                 landmark = hand[i]
                 if i == 9:
-                    y_anterior = int(landmark.y * height)
+                    previous_y = int(landmark.y * height)
                 else:
-                    if y_anterior < int(landmark.y * height):
-                        mig = False
-                y_anterior = int(landmark.y * height)
-            if mig:
-                grau += 1
+                    if previous_y < int(landmark.y * height):
+                        middle = False
+                previous_y = int(landmark.y * height)
+            if middle:
+                degree += 1
                 cv2.putText(
                     frame,
-                    "Mig",
+                    "Middle",
                     (50, 100),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1,
@@ -306,20 +224,20 @@ while True:
                     2
                 )
             
-            anular = True
-            for i in range(13,17):
+            ring = True
+            for i in range(13, 17):
                 landmark = hand[i]
                 if i == 13:
-                    y_anterior = int(landmark.y * height)
+                    previous_y = int(landmark.y * height)
                 else:
-                    if y_anterior < int(landmark.y * height):
-                        anular = False
-                y_anterior = int(landmark.y * height)
-            if anular:
-                grau += 1
+                    if previous_y < int(landmark.y * height):
+                        ring = False
+                previous_y = int(landmark.y * height)
+            if ring:
+                degree += 1
                 cv2.putText(
                     frame,
-                    "Anular",
+                    "Ring",
                     (50, 130),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1,
@@ -327,96 +245,87 @@ while True:
                     2
                 )
             
-            petit = True
+            pinky = True
             for i in range(17, 21):
                 landmark = hand[i]
                 if i == 17:
-                    y_anterior = int(landmark.y * height)
+                    previous_y = int(landmark.y * height)
                 else:
-                    if y_anterior < int(landmark.y * height):
-                        petit = False
-                y_anterior = int(landmark.y * height)
-            if petit:
-                grau += 1
+                    if previous_y < int(landmark.y * height):
+                        pinky = False
+                previous_y = int(landmark.y * height)
+            if pinky:
+                degree += 1
                 cv2.putText(
                     frame,
-                    "Petit",
+                    "Pinky",
                     (50, 160),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1,
                     (255, 0, 0),
                     2
                 )
-            if (polze and index) and (polze and petit) and (not(anular)) and (not(mig)):
-                grau = 7
-            elif petit and index and (not(anular)) and (not(mig)) and not(polze):
-                grau = 6
 
-                
-            
-            
-            """alternativa si no es giren les mans
-            landmark1 = hand[20]
-            landmark2 = hand[4]
-
-            if landmark1.x-landmark2.x < 0:
-            """
+            if (thumb and index) and (thumb and pinky) and (not ring) and (not middle):
+                degree = 7
+            elif pinky and index and (not ring) and (not middle) and not thumb:
+                degree = 6
 
             landmark = hand[20]
             if landmark.x < 0.5:
-                es_major = True
+                is_major = True
                 cv2.putText(
                     frame,
-                    str("Esquerra"),
+                    "Left",
                     (210, 40),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1,
                     (0, 0, 0),
                     2
                 )
-                if grau == 1:
-                    roma = "I"
-                elif grau == 2:
-                    roma = "II"
-                elif grau == 3:
-                    roma = "III"
-                elif grau == 4:
-                    roma = "IV"
-                elif grau == 5:
-                    roma = "V"
-                elif grau == 6:
-                    roma = "VI"
-                elif grau == 7:
-                    roma = "VII"
+                if degree == 1:
+                    roman = "I"
+                elif degree == 2:
+                    roman = "II"
+                elif degree == 3:
+                    roman = "III"
+                elif degree == 4:
+                    roman = "IV"
+                elif degree == 5:
+                    roman = "V"
+                elif degree == 6:
+                    roman = "VI"
+                elif degree == 7:
+                    roman = "VII"
             else:
-                es_major = False
+                is_major = False
                 cv2.putText(
                     frame,
-                    "Dreta",
+                    "Right",
                     (210, 40),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1,
                     (0, 0, 0),
                     2
                 )
-                if grau == 1:
-                    roma = "i"
-                elif grau == 2:
-                    roma = "ii"
-                elif grau == 3:
-                    roma = "iii"
-                elif grau == 4:
-                    roma = "iv"
-                elif grau == 5:
-                    roma = "v"
-                elif grau == 6:
-                    roma = "vi"
-                elif grau == 7:
-                    roma = "vii"
+                if degree == 1:
+                    roman = "i"
+                elif degree == 2:
+                    roman = "ii"
+                elif degree == 3:
+                    roman = "iii"
+                elif degree == 4:
+                    roman = "iv"
+                elif degree == 5:
+                    roman = "v"
+                elif degree == 6:
+                    roman = "vi"
+                elif degree == 7:
+                    roman = "vii"
                 
             cv2.putText(
                 frame,
-                "Grau: "+roma,
+                "Degree: " + roman,
                 (210, 70),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 1,
@@ -424,19 +333,19 @@ while True:
                 2
             )
 
-            estat_actual = (es_major, grau)
+            current_state = (is_major, degree)
 
-            if estat_actual != estat_anterior:
+            if current_state != previous_state:
                 pygame.mixer.stop()
-                if es_major and grau in MAJORS:
-                    canal_synth.play(MAJORS[grau], loops=-1)
-                elif not es_major and grau in MENORS:
-                    canal_synth.play(MENORS[grau], loops=-1)
-                estat_anterior = estat_actual
+                if is_major and degree in MAJOR_CHORDS:
+                    synth_channel.play(MAJOR_CHORDS[degree], loops=-1)
+                elif not is_major and degree in MINOR_CHORDS:
+                    synth_channel.play(MINOR_CHORDS[degree], loops=-1)
+                previous_state = current_state
 
-            suma = 0
+            z_sum = 0
             for i, landmark in enumerate(hand):
-                suma += landmark.z
+                z_sum += landmark.z
                 x = int(landmark.x * width)
                 y = int(landmark.y * height)
 
@@ -448,17 +357,17 @@ while True:
                     -1
                 )
             
-                y_anterior = y
+                previous_y = y
 
-            #we want the volume between 0 and 1
-            volum = (-10*suma-3)/17
-            if volum >= 1:
-                volum = 1
-            elif volum <= 0:
-                volum = 0
+            volume = (-10 * z_sum - 3) / 17
+            if volume >= 1:
+                volume = 1
+            elif volume <= 0:
+                volume = 0
+
             cv2.putText(
                 frame,
-                "Volum: "+str(int(volum*100))+"%",
+                "Volume: " + str(int(volume * 100)) + "%",
                 (360, 70),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 1,
@@ -466,17 +375,11 @@ while True:
                 2
             )
             
-            canal_synth.set_volume(volum)
-                
-
-
-        # ----------------------------------------------------
-        # TEXT
-        # ----------------------------------------------------
+            synth_channel.set_volume(volume)
 
         cv2.putText(
             frame,
-            "MÀ DETECTADA",
+            "HAND DETECTED",
             (360, 40),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
@@ -485,13 +388,13 @@ while True:
         )
 
     else:
-        if estat_anterior != (None, 0):
+        if previous_state != (None, 0):
             pygame.mixer.stop()
-            estat_anterior = (None, 0)
+            previous_state = (None, 0)
         
         cv2.putText(
             frame,
-            "Buscant una mà...",
+            "Searching for hand...",
             (320, 40),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
@@ -499,36 +402,18 @@ while True:
             2
         )
 
-
-    # ========================================================
-    # MOSTRAR LA CÀMERA
-    # ========================================================
-
     cv2.imshow(
-        "Gesture Synth - Prova",
+        "Gesture Synth - Test",
         frame
     )
 
+    key = cv2.waitKey(1) & 0xFF
 
-    # ========================================================
-    # SORTIR
-    # ========================================================
-
-    tecla = cv2.waitKey(1) & 0xFF
-
-    if tecla == ord("q"):
+    if key == ord("q"):
         break
 
-
-# ============================================================
-# TANCAR TOT
-# ============================================================
-
-print("Tancant programa...")
 pygame.quit()
-camara.release()
+camera.release()
 detector.close()
 cv2.destroyAllWindows()
-
-print("Programa tancat correctament.")
 

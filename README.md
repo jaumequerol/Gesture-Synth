@@ -61,7 +61,7 @@ The specific chord degree is triggered by the combination of raised fingers:
 
 6. Place your hand in front of the webcam and use your fingers to control the chords.
 
-7. Press **Q** to exit.
+7. Press **q** to exit.
 
 ## Controls
 
