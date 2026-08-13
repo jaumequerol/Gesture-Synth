@@ -65,11 +65,15 @@ timestamp_ms = 0
 estat_anterior = (None, 0)
 pygame.mixer.init(44100, -16, 2, 1024)
 t = np.linspace(0, 1, 44100, False)
+canal_synth = pygame.mixer.Channel(0)
+canal_synth.set_volume(0.0)
 
 def crear_acord(f1, f2, f3):
     wave = (np.sin(2*np.pi*f1*t) + np.sin(2*np.pi*f2*t) + np.sin(2*np.pi*f3*t)) / 3
     audio = (wave * 8000).astype(np.int16)
     return pygame.sndarray.make_sound(np.column_stack((audio, audio)))
+
+
 
 # Guardem els acords generats en un diccionari
 f1, f2, f3 = 262, 330, 392
@@ -80,17 +84,45 @@ MAJORS = {
     4: crear_acord(f1*(2**(5/12)), f2*(2**(5/12)), f3*(2**(5/12))),
     5: crear_acord(f1*(2**(7/12)), f2*(2**(7/12)), f3*(2**(7/12))),
     6: crear_acord(f1*(2**(9/12)), f2*(2**(9/12)), f3*(2**(9/12))),
-    7: crear_acord(f1*(2**(11/12)), f2*(2**(11/12)), f3*(2**(11/12)))
+    7: crear_acord(f1*(2**(11/12)), f2*(2**(11/12)), f3*(2**(11/12))),
+    8: crear_acord(f1/2, f2/2, f3/2),
+    9: crear_acord(f1/2*(2**(2/12)), f2/2*(2**(2/12)), f3/2*(2**(2/12))),
+    10: crear_acord(f1/2*(2**(4/12)), f2/2*(2**(4/12)), f3/2*(2**(4/12))),
+    11: crear_acord(f1/2*(2**(5/12)), f2/2*(2**(5/12)), f3/2*(2**(5/12))),
+    12: crear_acord(f1/2*(2**(7/12)), f2/2*(2**(7/12)), f3/2*(2**(7/12))),
+    13: crear_acord(f1/2*(2**(9/12)), f2/2*(2**(9/12)), f3/2*(2**(9/12))),
+    14: crear_acord(f1/2*(2**(11/12)), f2/2*(2**(11/12)), f3/2*(2**(11/12))),
+    15: crear_acord(f1*2, f2*2, f3*2),
+    16: crear_acord(f1*2*(2**(2/12)), f2*2*(2**(2/12)), f3*2*(2**(2/12))),
+    17: crear_acord(f1*2*(2**(4/12)), f2*2*(2**(4/12)), f3*2*(2**(4/12))),
+    18: crear_acord(f1*2*(2**(5/12)), f2*2*(2**(5/12)), f3*2*(2**(5/12))),
+    19: crear_acord(f1*2*(2**(7/12)), f2*2*(2**(7/12)), f3*2*(2**(7/12))),
+    20: crear_acord(f1*2*(2**(9/12)), f2*2*(2**(9/12)), f3*2*(2**(9/12))),
+    21: crear_acord(f1*2*(2**(11/12)), f2*2*(2**(11/12)), f3*2*(2**(11/12)))
 }
 f1, f2, f3 = 262, 312, 392
 MENORS = {
     1: crear_acord(f1, f2, f3),
-    2: crear_acord(f1*(2**(2/12)), f2*(2**(2/12)), f3*(2**(2/12))),
-    3: crear_acord(f1*(2**(4/12)), f2*(2**(4/12)), f3*(2**(4/12))),
-    4: crear_acord(f1*(2**(5/12)), f2*(2**(5/12)), f3*(2**(5/12))),
-    5: crear_acord(f1*(2**(7/12)), f2*(2**(7/12)), f3*(2**(7/12))),
-    6: crear_acord(f1*(2**(9/12)), f2*(2**(9/12)), f3*(2**(9/12))),
-    7: crear_acord(f1*(2**(11/12)), f2*(2**(11/12)), f3*(2**(11/12)))
+       2: crear_acord(f1*(2**(2/12)), f2*(2**(2/12)), f3*(2**(2/12))),
+       3: crear_acord(f1*(2**(4/12)), f2*(2**(4/12)), f3*(2**(4/12))),
+       4: crear_acord(f1*(2**(5/12)), f2*(2**(5/12)), f3*(2**(5/12))),
+       5: crear_acord(f1*(2**(7/12)), f2*(2**(7/12)), f3*(2**(7/12))),
+       6: crear_acord(f1*(2**(9/12)), f2*(2**(9/12)), f3*(2**(9/12))),
+       7: crear_acord(f1*(2**(11/12)), f2*(2**(11/12)), f3*(2**(11/12))),
+       8: crear_acord(f1/2, f2/2, f3/2),
+       9: crear_acord(f1/2*(2**(2/12)), f2/2*(2**(2/12)), f3/2*(2**(2/12))),
+       10: crear_acord(f1/2*(2**(4/12)), f2/2*(2**(4/12)), f3/2*(2**(4/12))),
+       11: crear_acord(f1/2*(2**(5/12)), f2/2*(2**(5/12)), f3/2*(2**(5/12))),
+       12: crear_acord(f1/2*(2**(7/12)), f2/2*(2**(7/12)), f3/2*(2**(7/12))),
+       13: crear_acord(f1/2*(2**(9/12)), f2/2*(2**(9/12)), f3/2*(2**(9/12))),
+       14: crear_acord(f1/2*(2**(11/12)), f2/2*(2**(11/12)), f3/2*(2**(11/12))),
+       15: crear_acord(f1*2, f2*2, f3*2),
+       16: crear_acord(f1*2*(2**(2/12)), f2*2*(2**(2/12)), f3*2*(2**(2/12))),
+       17: crear_acord(f1*2*(2**(4/12)), f2*2*(2**(4/12)), f3*2*(2**(4/12))),
+       18: crear_acord(f1*2*(2**(5/12)), f2*2*(2**(5/12)), f3*2*(2**(5/12))),
+       19: crear_acord(f1*2*(2**(7/12)), f2*2*(2**(7/12)), f3*2*(2**(7/12))),
+       20: crear_acord(f1*2*(2**(9/12)), f2*2*(2**(9/12)), f3*2*(2**(9/12))),
+       21: crear_acord(f1*2*(2**(11/12)), f2*2*(2**(11/12)), f3*2*(2**(11/12)))
 }
 
 # Els 21 punts de la mà de MediaPipe
@@ -245,7 +277,7 @@ while True:
                 grau += 1
                 cv2.putText(
                     frame,
-                    "Index",
+                    "Índex",
                     (50, 70),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1,
@@ -319,15 +351,8 @@ while True:
                 grau = 7
             elif petit and index and (not(anular)) and (not(mig)) and not(polze):
                 grau = 6
-            cv2.putText(
-                frame,
-                str(grau),
-                (150, 50),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                (255, 0, 0),
-                2
-            )
+
+                
             
             
             """alternativa si no es giren les mans
@@ -343,51 +368,105 @@ while True:
                 cv2.putText(
                     frame,
                     str("Esquerra"),
-                    (250, 50),
+                    (210, 40),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1,
-                    (255, 0, 0),
+                    (0, 0, 0),
                     2
                 )
+                if grau == 1:
+                    roma = "I"
+                elif grau == 2:
+                    roma = "II"
+                elif grau == 3:
+                    roma = "III"
+                elif grau == 4:
+                    roma = "IV"
+                elif grau == 5:
+                    roma = "V"
+                elif grau == 6:
+                    roma = "VI"
+                elif grau == 7:
+                    roma = "VII"
             else:
                 es_major = False
                 cv2.putText(
                     frame,
                     "Dreta",
-                    (250, 50),
+                    (210, 40),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1,
-                    (255, 0, 0),
+                    (0, 0, 0),
                     2
                 )
+                if grau == 1:
+                    roma = "i"
+                elif grau == 2:
+                    roma = "ii"
+                elif grau == 3:
+                    roma = "iii"
+                elif grau == 4:
+                    roma = "iv"
+                elif grau == 5:
+                    roma = "v"
+                elif grau == 6:
+                    roma = "vi"
+                elif grau == 7:
+                    roma = "vii"
+                
+            cv2.putText(
+                frame,
+                "Grau: "+roma,
+                (210, 70),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 0, 0),
+                2
+            )
+
             estat_actual = (es_major, grau)
 
             if estat_actual != estat_anterior:
                 pygame.mixer.stop()
                 if es_major and grau in MAJORS:
-                    MAJORS[grau].play(-1)
+                    canal_synth.play(MAJORS[grau], loops=-1)
                 elif not es_major and grau in MENORS:
-                    MENORS[grau].play(-1)
+                    canal_synth.play(MENORS[grau], loops=-1)
                 estat_anterior = estat_actual
 
-
+            suma = 0
             for i, landmark in enumerate(hand):
-
+                suma += landmark.z
                 x = int(landmark.x * width)
                 y = int(landmark.y * height)
-
-
 
                 cv2.circle(
                     frame,
                     (x, y),
                     6,
-                    (0, 255, 0),
+                    (0, 0, 0),
                     -1
                 )
             
                 y_anterior = y
-           
+
+            #we want the volume between 0 and 1
+            volum = (-10*suma-3)/17
+            if volum >= 1:
+                volum = 1
+            elif volum <= 0:
+                volum = 0
+            cv2.putText(
+                frame,
+                "Volum: "+str(int(volum*100))+"%",
+                (360, 70),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 255, 0),
+                2
+            )
+            
+            canal_synth.set_volume(volum)
                 
 
 
@@ -397,7 +476,7 @@ while True:
 
         cv2.putText(
             frame,
-            "HAND DETECTED",
+            "MÀ DETECTADA",
             (360, 40),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
@@ -412,7 +491,7 @@ while True:
         
         cv2.putText(
             frame,
-            "Searching for a hand...",
+            "Buscant una mà...",
             (320, 40),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
