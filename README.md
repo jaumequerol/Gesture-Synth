@@ -32,7 +32,7 @@ The specific chord degree is triggered by the combination of raised fingers:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/jqredo/Gesture-Synth.git
+   git clone https://github.com/jaumequerol/Gesture-Synth.git
    ```
 
 2. Enter the project directory:
